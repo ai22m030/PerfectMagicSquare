@@ -23,9 +23,11 @@ int main() {
         std::cout << "Found solution:" << std::endl;
         square.print(false);
         square.write(name);
-    } else {
-        std::cout << "No solution found!" << std::endl;
+
+        return EXIT_SUCCESS;
     }
 
-    return EXIT_SUCCESS;
+    std::cout << "No solution found!" << std::endl;
+
+    return EXIT_FAILURE;
 }

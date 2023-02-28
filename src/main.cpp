@@ -6,12 +6,15 @@
 #include <vector>
 
 #include "magic_square.h"
+#include "program_options.h"
 
 const int POPULATION = 10000;
 const int SIZE = 5;
 const int ITERATIONS = -1;
 
 int main() {
+    program_options::description();
+
     std::vector<MagicSquare> population;
 
     for(int i = 0; i < POPULATION; i++) population.emplace_back(SIZE);

@@ -51,8 +51,6 @@ target_include_directories(${MAGIC_SQUARE_PROJECT_NAME}TestsEight PUBLIC
 target_include_directories(${MAGIC_SQUARE_PROJECT_NAME}TestsNine PUBLIC
         ${MAGIC_SQUARE_INC_DIR})
 
-enable_testing()
-
 add_test(NAME square_three_test COMMAND $<TARGET_FILE:${MAGIC_SQUARE_PROJECT_NAME}TestsThree>)
 
 add_test(NAME square_four_test COMMAND $<TARGET_FILE:${MAGIC_SQUARE_PROJECT_NAME}TestsFour>)
