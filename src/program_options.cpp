@@ -7,6 +7,13 @@
 #include <vector>
 #include <iostream>
 
+/**
+ * Get options passed to the program
+ *
+ * @param args
+ * @param option_name
+ * @return
+ */
 std::string_view program_options::get(
         const std::vector<std::string_view>& args,
         const std::string_view& option_name) {
@@ -19,6 +26,13 @@ std::string_view program_options::get(
     return "";
 }
 
+/**
+ * Check if option exists
+ *
+ * @param args
+ * @param option_name
+ * @return
+ */
 bool program_options::has(
         const std::vector<std::string_view>& args,
         const std::string_view& option_name) {
@@ -30,19 +44,24 @@ bool program_options::has(
     return false;
 }
 
+/**
+ * Output description
+ */
 void program_options::description() {
     std::cout.setf(std::ios::right, std::ios::adjustfield);
     std::cout.width(50);
     std::cout << "Usage of the MagicSquare generator" << std::endl << std::endl;
     std::cout.setf(std::ios::right, std::ios::adjustfield);
-    std::cout.width(31);
-    std::cout << "-s <number>: Square dimension" << std::endl;
-    std::cout.width(30);
-    std::cout << "-p <number>: Population size" << std::endl;
-    std::cout.width(31);
-    std::cout << "-i <number>: Iterations count" << std::endl;
+    std::cout.width(39);
+    std::cout << "-d <number>: Square dimension (3 - 9)" << std::endl;
+    std::cout.width(45);
+    std::cout << "-p <number>: Population size (1000 - 10000)" << std::endl;
+    std::cout.width(66);
+    std::cout << "-i <number>: Iterations count (1000 - 100000 or -1 for infinite)" << std::endl;
     std::cout.width(31);
     std::cout << "-o <name>: Output file name" << std::endl;
     std::cout.width(27);
-    std::cout << "-v: Verbose mode" << std::endl << std::endl;
+    std::cout << "-v: Verbose mode" << std::endl;
+    std::cout.width(19);
+    std::cout << "-h: Help" << std::endl << std::endl;
 }
