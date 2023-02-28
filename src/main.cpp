@@ -21,6 +21,7 @@ int main(int argc, char **argv) {
     bool fail = false;
     bool verbose = program_options::has(args, "-v");
     bool help = program_options::has(args, "-h");
+    bool silent = program_options::has(args, "-s");
 
     int size = 0;
     int populationSize = 0;
@@ -45,6 +46,11 @@ int main(int argc, char **argv) {
 
     if (program_options::has(args, "-o"))
         name = program_options::get(args, "-o").begin();
+
+    if(silent && verbose) {
+        std::cout << "Can't combine verbose and silent mode!" << std::endl << std::endl;
+        fail = true;
+    }
 
     if (size < 3 || size > 9) {
         std::cout << "Wrong square dimension!" << std::endl << std::endl;
@@ -74,8 +80,10 @@ int main(int argc, char **argv) {
     auto square = solve(population, size, iterations, verbose);
 
     if (square.getFitness() == 0) {
-        std::cout << "Found solution:" << std::endl;
-        square.print(false);
+        if(!silent) {
+            std::cout << "Found solution:" << std::endl;
+            square.print(false);
+        }
 
         if (!name.empty())
             square.write(name.append(".csv"));
@@ -83,7 +91,8 @@ int main(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
-    std::cout << "No solution found!" << std::endl;
+    if(!silent)
+        std::cout << "No solution found!" << std::endl;
 
     return EXIT_SUCCESS;
 }

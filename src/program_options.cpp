@@ -60,6 +60,8 @@ void program_options::description() {
     std::cout << "-i <number>: Iterations count (1000 - 100000 or -1 for infinite)" << std::endl;
     std::cout.width(31);
     std::cout << "-o <name>: Output file name" << std::endl;
+    std::cout.width(26);
+    std::cout << "-s: Silent mode" << std::endl;
     std::cout.width(27);
     std::cout << "-v: Verbose mode" << std::endl;
     std::cout.width(19);
