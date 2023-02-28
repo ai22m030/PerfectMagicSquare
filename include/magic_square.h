@@ -14,37 +14,45 @@
 // Define the mutation rate
 const double BASE_MUTATION = 0.1;
 
-
 /**
  * Base structure of a single magic square.
  * The size is defined by const.
  *
  */
-class MagicSquare{
+class MagicSquare {
 public:
     explicit MagicSquare(int, bool = true);
 
     void init();
+
     void randomize();
+
     void evaluate();
+
     void swap();
 
     void print(bool = true);
-    void write(std::string&);
+
+    void write(std::string &);
 
     [[nodiscard]] auto getFitness() const { return this->fitness; }
+
     [[nodiscard]] auto getSum() const { return this->sum; }
+
     [[nodiscard]] auto getValue(int row, int col) const { return this->values[row][col]; }
-    auto& getValues() { return this->values; }
+
+    auto &getValues() { return this->values; }
 
     void setValue(int row, int col, int value) { this->values[row][col] = value; }
 
     bool valueExist(int);
 
-    MagicSquare& operator=(const MagicSquare&);
+    MagicSquare &operator=(const MagicSquare &);
 
-    friend bool operator== (const MagicSquare&, const MagicSquare&);
-    friend bool operator!= (const MagicSquare&, const MagicSquare&);
+    friend bool operator==(const MagicSquare &, const MagicSquare &);
+
+    friend bool operator!=(const MagicSquare &, const MagicSquare &);
+
 private:
     std::vector<std::vector<int>> values;
     int dimension;
@@ -52,19 +60,26 @@ private:
     int sum;
 
     int fitnessRows();
+
     int fitnessColumns();
+
     int fitnessDiagonal1();
+
     int fitnessDiagonal2();
 };
 
-bool operator== (const MagicSquare&, const MagicSquare&);
-bool operator!= (const MagicSquare&, const MagicSquare&);
+bool operator==(const MagicSquare &, const MagicSquare &);
 
-void sort(std::vector<MagicSquare>&);
-void selection(std::vector<MagicSquare>&, std::vector<MagicSquare>&);
-void crossover(std::vector<MagicSquare>&, std::vector<MagicSquare>&, int);
+bool operator!=(const MagicSquare &, const MagicSquare &);
+
+void sort(std::vector<MagicSquare> &);
+
+void selection(std::vector<MagicSquare> &, std::vector<MagicSquare> &);
+
+void crossover(std::vector<MagicSquare> &, std::vector<MagicSquare> &, int);
+
 void mutate(std::vector<MagicSquare> &population, double probability);
 
-MagicSquare solve(std::vector<MagicSquare>&, int, int, bool = false);
+MagicSquare solve(std::vector<MagicSquare> &, int, int, bool = false);
 
 #endif //PERFECT_MAGIC_SQUARE_MAGIC_SQUARE_H

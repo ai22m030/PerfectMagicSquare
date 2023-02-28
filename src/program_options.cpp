@@ -15,8 +15,8 @@
  * @return
  */
 std::string_view program_options::get(
-        const std::vector<std::string_view>& args,
-        const std::string_view& option_name) {
+        const std::vector<std::string_view> &args,
+        const std::string_view &option_name) {
     for (auto it = args.begin(), end = args.end(); it != end; ++it) {
         if (*it == option_name)
             if (it + 1 != end)
@@ -34,9 +34,9 @@ std::string_view program_options::get(
  * @return
  */
 bool program_options::has(
-        const std::vector<std::string_view>& args,
-        const std::string_view& option_name) {
-    for (auto arg : args) {
+        const std::vector<std::string_view> &args,
+        const std::string_view &option_name) {
+    for (auto arg: args) {
         if (arg == option_name)
             return true;
     }

@@ -25,7 +25,7 @@ MagicSquare::MagicSquare(int size, bool randomize) {
     this->values.resize(size, std::vector<int>(size));
     this->sum = MAGIC_SUM(size);
 
-    if(randomize)
+    if (randomize)
         this->randomize();
 
     this->evaluate();
@@ -35,8 +35,8 @@ MagicSquare::MagicSquare(int size, bool randomize) {
  * Init square with 0 values.
  */
 void MagicSquare::init() {
-    for(auto& row : this->values)
-        for(auto& col : row)
+    for (auto &row: this->values)
+        for (auto &col: row)
             col = 0;
 
     this->fitness = 0;
@@ -53,8 +53,8 @@ void MagicSquare::randomize() {
     std::shuffle(tmpValues.begin(), tmpValues.end(), rng);
 
     int i = 0;
-    for(auto &row : this->values){
-        for(auto &col : row){
+    for (auto &row: this->values) {
+        for (auto &col: row) {
             col = tmpValues[i];
             i++;
         }
@@ -91,7 +91,7 @@ void MagicSquare::swap() {
         toRow = dist(rng);
         fromCol = dist(rng);
         toCol = dist(rng);
-    } while((fromRow == toRow) && (fromCol == toCol));
+    } while ((fromRow == toRow) && (fromCol == toCol));
 
     std::swap(this->values[fromRow][fromCol], this->values[toRow][toCol]);
 
@@ -106,10 +106,10 @@ void MagicSquare::swap() {
 void MagicSquare::print(bool details) {
     int width = 2; // minimum width for single-digit numbers
 
-    for(const auto& row : this->values) {
-        for(const auto& num : row) {
-            int numWidth = (int)std::to_string(num).length();
-            if(numWidth > width) {
+    for (const auto &row: this->values) {
+        for (const auto &num: row) {
+            int numWidth = (int) std::to_string(num).length();
+            if (numWidth > width) {
                 width = numWidth;
             }
         }
@@ -119,14 +119,14 @@ void MagicSquare::print(bool details) {
     width += 1;
 
     // print the matrix with borders between numbers
-    for(const auto& row : this->values) {
-        for(const auto& num : row) {
+    for (const auto &row: this->values) {
+        for (const auto &num: row) {
             std::cout << "|" << std::setw(width - 1) << num;
         }
         std::cout << "|" << std::endl;
     }
 
-    if(details)
+    if (details)
         std::cout << "Fitness: " << this->getFitness() << std::endl << std::endl;
 }
 
@@ -135,11 +135,11 @@ void MagicSquare::print(bool details) {
  *
  * @param name
  */
-void MagicSquare::write(std::string& name) {
+void MagicSquare::write(std::string &name) {
     std::ofstream outputFile(name, std::ios::trunc);
 
-    for(const auto& row : this->values) {
-        for(const auto& num : row) {
+    for (const auto &row: this->values) {
+        for (const auto &num: row) {
             outputFile << num << ';';
         }
         outputFile << std::endl;
@@ -228,9 +228,9 @@ int MagicSquare::fitnessDiagonal2() {
  * @return
  */
 bool MagicSquare::valueExist(int value) {
-    for(auto& row : this->values)
-        for(auto col : row)
-            if(col == value)
+    for (auto &row: this->values)
+        for (auto col: row)
+            if (col == value)
                 return true;
 
     return false;
@@ -244,8 +244,8 @@ bool MagicSquare::valueExist(int value) {
  */
 MagicSquare &MagicSquare::operator=(const MagicSquare &other) {
     if (this != &other)
-        for(int row = 0; row < this->dimension; row++)
-            for(int col = 0; col < this->dimension; col++)
+        for (int row = 0; row < this->dimension; row++)
+            for (int col = 0; col < this->dimension; col++)
                 this->values[row][col] = other.getValue(row, col);
 
     this->evaluate();
@@ -261,12 +261,12 @@ MagicSquare &MagicSquare::operator=(const MagicSquare &other) {
  * @return
  */
 bool operator==(const MagicSquare &a, const MagicSquare &b) {
-    if(&a == &b)
+    if (&a == &b)
         return true;
 
-    for(int row = 0; row < a.dimension; row++)
-        for(int col = 0; col < a.dimension; col++)
-            if(a.getValue(row, col) != b.getValue(row, col))
+    for (int row = 0; row < a.dimension; row++)
+        for (int col = 0; col < a.dimension; col++)
+            if (a.getValue(row, col) != b.getValue(row, col))
                 return false;
 
     return true;
@@ -288,9 +288,9 @@ bool operator!=(const MagicSquare &a, const MagicSquare &b) {
  *
  * @param population
  */
-void sort(std::vector<MagicSquare>& population) {
+void sort(std::vector<MagicSquare> &population) {
     std::sort(population.begin(),
-              population.end(),[](const MagicSquare &a, const MagicSquare &b) {
+              population.end(), [](const MagicSquare &a, const MagicSquare &b) {
                 return a.getFitness() < b.getFitness();
             });
 }
@@ -302,11 +302,11 @@ void sort(std::vector<MagicSquare>& population) {
  * @param selected
  * @return
  */
-void selection(std::vector<MagicSquare>& population, std::vector<MagicSquare>& selected) {
+void selection(std::vector<MagicSquare> &population, std::vector<MagicSquare> &selected) {
     sort(population);
 
     for (int i = 0; i < population.size() / 3; i++)
-        if(std::find(selected.begin(), selected.end(),population[i]) == selected.end())
+        if (std::find(selected.begin(), selected.end(), population[i]) == selected.end())
             selected.push_back(population[i]);
 }
 
@@ -318,11 +318,11 @@ void selection(std::vector<MagicSquare>& population, std::vector<MagicSquare>& s
  * @param population
  * @return
  */
-void crossover(std::vector<MagicSquare>& population, std::vector<MagicSquare>& offspring, int size) {
+void crossover(std::vector<MagicSquare> &population, std::vector<MagicSquare> &offspring, int size) {
     std::uniform_int_distribution<int> distFill(1, size * size);
     std::uniform_int_distribution<int> distParent(0, (int) population.size() - 1);
 
-    for(int i = 0; i < (population.size() / 3 ); i++) {
+    for (int i = 0; i < (population.size() / 3); i++) {
         MagicSquare parent1(size, false);
         MagicSquare parent2(size, false);
         MagicSquare child(size, false);
@@ -419,7 +419,7 @@ void crossover(std::vector<MagicSquare>& population, std::vector<MagicSquare>& o
  * @param population
  * @param probability
  */
-void mutate(std::vector<MagicSquare>& population, double probability) {
+void mutate(std::vector<MagicSquare> &population, double probability) {
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
     // Mutate each square with a certain probability
@@ -437,13 +437,13 @@ void mutate(std::vector<MagicSquare>& population, double probability) {
  * @param verbose
  * @return
  */
-MagicSquare solve(std::vector<MagicSquare>& population, int size, int iterations, bool verbose) {
+MagicSquare solve(std::vector<MagicSquare> &population, int size, int iterations, bool verbose) {
     int lastFitness = -1;
     int unchanged = 0;
     double probability = BASE_MUTATION;
     bool infinite = false;
 
-    if(iterations == -1) infinite = true;
+    if (iterations == -1) infinite = true;
 
     for (int it = 0; (it < iterations) || infinite; it++) {
         auto selected = std::vector<MagicSquare>();
@@ -451,15 +451,15 @@ MagicSquare solve(std::vector<MagicSquare>& population, int size, int iterations
         auto check = std::vector<MagicSquare>();
         selection(population, selected);
 
-        if(selected[0].getFitness() == 0)
+        if (selected[0].getFitness() == 0)
             return selected[0];
 
-        if(verbose){
+        if (verbose) {
             int count = 0;
 
             std::cout << "Current top 5:" << std::endl << std::endl;
 
-            while(count < 5){
+            while (count < 5) {
                 std::cout << '#' << count + 1 << ':' << std::endl;
                 selected[count].print();
                 count++;
@@ -469,7 +469,7 @@ MagicSquare solve(std::vector<MagicSquare>& population, int size, int iterations
         crossover(population, offspring, size);
         sort(offspring);
 
-        if(offspring[0].getFitness() == 0)
+        if (offspring[0].getFitness() == 0)
             return offspring[0];
 
         if (population[0].getFitness() == lastFitness) {
@@ -487,13 +487,13 @@ MagicSquare solve(std::vector<MagicSquare>& population, int size, int iterations
         mutate(offspring, probability);
 
         int i = 0;
-        for(auto& oneSquare : selected) {
+        for (auto &oneSquare: selected) {
             population[i] = oneSquare;
             i++;
         }
 
-        for(auto &oneSquare : offspring) {
-            if (std::find(selected.begin(), selected.end(),oneSquare) == selected.end()) {
+        for (auto &oneSquare: offspring) {
+            if (std::find(selected.begin(), selected.end(), oneSquare) == selected.end()) {
                 population[i] = oneSquare;
                 i++;
             }
@@ -502,9 +502,9 @@ MagicSquare solve(std::vector<MagicSquare>& population, int size, int iterations
         while (i < population.size()) {
             MagicSquare tmpSquare = MagicSquare(size);
 
-            if ((std::find(selected.begin(), selected.end(),tmpSquare) == selected.end()) &&
-                (std::find(offspring.begin(), offspring.end(),tmpSquare) == offspring.end()) &&
-                (std::find(check.begin(), check.end(),tmpSquare) == check.end())) {
+            if ((std::find(selected.begin(), selected.end(), tmpSquare) == selected.end()) &&
+                (std::find(offspring.begin(), offspring.end(), tmpSquare) == offspring.end()) &&
+                (std::find(check.begin(), check.end(), tmpSquare) == check.end())) {
                 population[i] = tmpSquare;
                 check.push_back(tmpSquare);
                 i++;

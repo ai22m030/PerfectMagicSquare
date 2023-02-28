@@ -9,7 +9,7 @@
 #include <vector>
 
 namespace program_options {
-    bool has(const std::vector<std::string_view>& args, const std::string_view& option_name);
+    bool has(const std::vector<std::string_view> &args, const std::string_view &option_name);
 
     std::string_view get(const std::vector<std::string_view> &args, const std::string_view &option_name);
 

@@ -15,11 +15,11 @@ int main() {
     std::vector<MagicSquare> population;
     std::string name("result_7.csv");
 
-    for(int i = 0; i < POPULATION; i++) population.emplace_back(SIZE);
+    for (int i = 0; i < POPULATION; i++) population.emplace_back(SIZE);
 
     auto square = solve(population, SIZE, ITERATIONS, true);
 
-    if(square.getFitness() == 0) {
+    if (square.getFitness() == 0) {
         std::cout << "Found solution:" << std::endl;
         square.print(false);
         square.write(name);
