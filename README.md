@@ -17,6 +17,12 @@ $ ./bin/PerfectMagicSquare -d 3 -p 1000 -i 1000
 
 This will solve a 3x3 magic square and output the solution to the console.
 
+Following command can be used to run tests and generate squares of sizes between 3 and 9:
+
+```bash
+$ ctest
+```
+
 ## Implementation Details
 
 The program uses a `MagicSquare` class to represent a candidate solution to the magic square problem. The `MagicSquare` class contains a 2D array of integers to store the values of the magic square and a `fitness` value to represent how well it matches the constraints of a magic square.
