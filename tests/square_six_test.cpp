@@ -13,6 +13,7 @@ const int ITERATIONS = 100000;
 
 int main() {
     std::vector<MagicSquare> population;
+    std::string name("result_6.csv");
 
     for(int i = 0; i < POPULATION; i++) population.emplace_back(SIZE);
 
@@ -21,6 +22,7 @@ int main() {
     if(square.getFitness() == 0) {
         std::cout << "Found solution:" << std::endl;
         square.print(false);
+        square.write(name);
     } else {
         std::cout << "No solution found!" << std::endl;
     }
