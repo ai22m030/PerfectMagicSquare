@@ -1,16 +1,25 @@
 //
-// Created by Adnan Vatric on 27.02.23.
+// Created by Adnan Vatric on 17.02.23.
 //
 
 #ifndef PERFECT_MAGIC_SQUARE_MAGIC_SQUARE_H
 #define PERFECT_MAGIC_SQUARE_MAGIC_SQUARE_H
 
 #include <vector>
+#include <string>
 
+// Calculate the magic sum of a square of given size
 #define MAGIC_SUM(square_size) ((square_size * (square_size * square_size + 1)) / 2)
 
+// Define the mutation rate
 const double BASE_MUTATION = 0.1;
 
+
+/**
+ * Base structure of a single magic square.
+ * The size is defined by const.
+ *
+ */
 class MagicSquare{
 public:
     explicit MagicSquare(int, bool = true);
@@ -21,9 +30,10 @@ public:
     void swap();
 
     void print(bool = true);
+    void write(std::string&);
 
     [[nodiscard]] auto getFitness() const { return this->fitness; }
-    [[nodiscard]] auto getMagicSum() const { return this->magicSum; }
+    [[nodiscard]] auto getSum() const { return this->sum; }
     [[nodiscard]] auto getValue(int row, int col) const { return this->values[row][col]; }
     auto& getValues() { return this->values; }
 
@@ -39,7 +49,7 @@ private:
     std::vector<std::vector<int>> values;
     int dimension;
     int fitness;
-    int magicSum;
+    int sum;
 
     int fitnessRows();
     int fitnessColumns();
