@@ -8,6 +8,13 @@
 #include "magic_square.h"
 #include "program_options.h"
 
+/**
+ * Entry point
+ *
+ * @param argc
+ * @param argv
+ * @return
+ */
 int main(int argc, char** argv) {
     const std::vector<std::string_view> args(argv, argv + argc);
 
