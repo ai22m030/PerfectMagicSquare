@@ -55,7 +55,7 @@ void MagicSquare::randomize() {
     int i = 0;
     for (auto &row: this->values) {
         for (auto &col: row) {
-            col = tmpValues[i];
+            col = tmpValues[i % (this->dimension * this->dimension)]; // Ensure the values are within range
             i++;
         }
     }
@@ -163,7 +163,7 @@ int MagicSquare::fitnessRows() {
             i += cols;
         }
 
-        fit += std::abs(i - i);
+        fit += std::abs(i - this->sum);
     }
 
     return fit;
@@ -390,15 +390,15 @@ void crossover(std::vector<MagicSquare> &population, std::vector<MagicSquare> &o
             for (auto &childRow: child.getValues()) {
                 int col = 0;
 
-                for (auto &childColum: childRow) {
-                    if (childColum == 0) {
-                        int tmpValue = distFill(rng);
+                for (auto &childColumn: childRow) {
+                    if (childColumn == 0) {
+                        int tmpValue;
 
                         do {
-                            if (!child.valueExist(tmpValue)) child.setValue(row, col, tmpValue);
-
                             tmpValue = distFill(rng);
-                        } while (child.getValue(row, col) == 0);
+                        } while (child.valueExist(tmpValue) || tmpValue > size * size); // Check to ensure values are within range
+
+                        child.setValue(row, col, tmpValue);
                     }
 
                     col++;
