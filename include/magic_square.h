@@ -11,8 +11,9 @@
 // Calculate the magic sum of a square of given size
 #define MAGIC_SUM(square_size) ((square_size * (square_size * square_size + 1)) / 2)
 
-// Define the mutation rate
+// Define the mutation rate and the number of changes needed to increase the mutation rate
 const double BASE_MUTATION = 0.1;
+const double BASE_CHANGE_COUNT = 3;
 
 /**
  * Base structure of a single magic square.

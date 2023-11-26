@@ -8,10 +8,9 @@
 #include <fstream>
 #include <string>
 
-#include "magic_square.h"
+#include <omp.h>
 
-// Define the random number generator
-std::mt19937 rng(std::random_device{}());
+#include "magic_square.h"
 
 /**
  * Create a new magic square with given size.
@@ -48,9 +47,10 @@ void MagicSquare::init() {
  * Generate random numbers for magic square.
  */
 void MagicSquare::randomize() {
+    thread_local std::mt19937 local_rng(std::random_device{}()); // Local RNG for each thread
     std::vector<int> tmpValues(this->dimension * this->dimension);
     std::iota(tmpValues.begin(), tmpValues.end(), 1);
-    std::shuffle(tmpValues.begin(), tmpValues.end(), rng);
+    std::shuffle(tmpValues.begin(), tmpValues.end(), local_rng);
 
     int i = 0;
     for (auto &row: this->values) {
@@ -82,21 +82,21 @@ void MagicSquare::evaluate() {
  *
  */
 void MagicSquare::swap() {
+    thread_local std::mt19937 local_rng(std::random_device{}());
     std::uniform_int_distribution<int> dist(0, this->dimension - 1);
 
     int fromRow, toRow, fromCol, toCol;
-
     do {
-        fromRow = dist(rng);
-        toRow = dist(rng);
-        fromCol = dist(rng);
-        toCol = dist(rng);
+        fromRow = dist(local_rng);
+        toRow = dist(local_rng);
+        fromCol = dist(local_rng);
+        toCol = dist(local_rng);
     } while ((fromRow == toRow) && (fromCol == toCol));
 
     std::swap(this->values[fromRow][fromCol], this->values[toRow][toCol]);
-
     this->evaluate();
 }
+
 
 /**
  * Print square to commandline
@@ -109,9 +109,8 @@ void MagicSquare::print(bool details) {
     for (const auto &row: this->values) {
         for (const auto &num: row) {
             int numWidth = (int) std::to_string(num).length();
-            if (numWidth > width) {
+            if (numWidth > width)
                 width = numWidth;
-            }
         }
     }
 
@@ -120,9 +119,9 @@ void MagicSquare::print(bool details) {
 
     // print the matrix with borders between numbers
     for (const auto &row: this->values) {
-        for (const auto &num: row) {
+        for (const auto &num: row)
             std::cout << "|" << std::setw(width - 1) << num;
-        }
+
         std::cout << "|" << std::endl;
     }
 
@@ -139,9 +138,9 @@ void MagicSquare::write(std::string &name) {
     std::ofstream outputFile(name, std::ios::trunc);
 
     for (const auto &row: this->values) {
-        for (const auto &num: row) {
+        for (const auto &num: row)
             outputFile << num << ';';
-        }
+
         outputFile << std::endl;
     }
 
@@ -159,9 +158,8 @@ int MagicSquare::fitnessRows() {
     for (auto &rows: this->values) {
         int i = 0;
 
-        for (auto cols: rows) {
+        for (auto cols: rows)
             i += cols;
-        }
 
         fit += std::abs(i - this->sum);
     }
@@ -180,9 +178,8 @@ int MagicSquare::fitnessColumns() {
     for (int cols = 0; cols < this->dimension; cols++) {
         int i = 0;
 
-        for (auto &value: this->values) {
+        for (auto &value: this->values)
             i += value[cols];
-        }
 
         fit += std::abs(i - this->sum);
     }
@@ -199,9 +196,8 @@ int MagicSquare::fitnessColumns() {
 int MagicSquare::fitnessDiagonal1() {
     int s = 0;
 
-    for (int i = 0; i < this->dimension; i++) {
+    for (int i = 0; i < this->dimension; i++)
         s += this->values[i][i];
-    }
 
     return std::abs(s - this->sum);
 }
@@ -214,9 +210,8 @@ int MagicSquare::fitnessDiagonal1() {
 int MagicSquare::fitnessDiagonal2() {
     int s = 0;
 
-    for (int i = this->dimension - 1; i >= 0; i--) {
+    for (int i = this->dimension - 1; i >= 0; i--)
         s += this->values[this->dimension - (i + 1)][i];
-    }
 
     return std::abs(s - this->sum);
 }
@@ -305,10 +300,21 @@ void sort(std::vector<MagicSquare> &population) {
 void selection(std::vector<MagicSquare> &population, std::vector<MagicSquare> &selected) {
     sort(population);
 
-    for (int i = 0; i < population.size() / 3; i++)
-        if (std::find(selected.begin(), selected.end(), population[i]) == selected.end())
-            selected.push_back(population[i]);
+#pragma omp parallel default(none) shared(population, selected)
+    {
+        std::vector<MagicSquare> local_selected;
+
+#pragma omp for schedule(static)
+        for (int i = 0; i < population.size() / 3; i++)
+            if (std::find(selected.begin(), selected.end(), population[i]) == selected.end())
+                local_selected.push_back(population[i]);
+
+        // Merge local vectors into the global vector
+#pragma omp critical
+        selected.insert(selected.end(), local_selected.begin(), local_selected.end());
+    }
 }
+
 
 /**
  * Combine random squares from population.
@@ -322,95 +328,113 @@ void crossover(std::vector<MagicSquare> &population, std::vector<MagicSquare> &o
     std::uniform_int_distribution<int> distFill(1, size * size);
     std::uniform_int_distribution<int> distParent(0, (int) population.size() - 1);
 
-    for (int i = 0; i < (population.size() / 3); i++) {
-        MagicSquare parent1(size, false);
-        MagicSquare parent2(size, false);
-        MagicSquare child(size, false);
+    // Creating a parallel region
+#pragma omp parallel default(none) shared(population, offspring, size, distParent, distFill)
+    {
+        std::vector<MagicSquare> local_offspring;
+        std::mt19937 local_rng(std::random_device{}());
 
-        do {
-            child.init();
+#pragma omp for schedule(static)
+        for (int i = 0; i < (population.size() / 3); i++) {
+            MagicSquare parent1(size, false);
+            MagicSquare parent2(size, false);
+            MagicSquare child(size, false);
 
             do {
-                parent1 = population[distParent(rng)];
-                parent2 = population[distParent(rng)];
-            } while (parent1 == parent2);
+                child.init();
 
-            // Copy rows from first parent
-            int row = 0;
-            for (auto &value: parent1.getValues()) {
-                int sum = 0;
+                do {
+                    parent1 = population[distParent(local_rng)];
+                    parent2 = population[distParent(local_rng)];
+                } while (parent1 == parent2);
 
-                for (int j: value) sum += j;
+                // Copy rows from first parent
+                int row = 0;
+                for (auto &value: parent1.getValues()) {
+                    int sum = 0;
 
-                if (sum == parent1.getSum()) {
+                    for (int j: value) sum += j;
+
+                    if (sum == parent1.getSum()) {
+                        int col = 0;
+
+                        for (int j: value) {
+                            child.setValue(row, col, j);
+                            col++;
+                        }
+                    }
+
+                    row++;
+                }
+
+                // Copy Columns from first parent
+                for (int col = 0; col < size; col++) {
+                    int sum = 0;
+
+                    for (auto &value: parent1.getValues()) sum += value[col];
+
+                    if (sum == parent1.getSum()) {
+                        row = 0;
+
+                        for (auto &value: parent1.getValues()) {
+                            child.setValue(row, col, value[col]);
+                            row++;
+                        }
+                    }
+                }
+
+                // Add some values from second parent
+                row = 0;
+                for (auto &value: parent2.getValues()) {
                     int col = 0;
 
                     for (int j: value) {
-                        child.setValue(row, col, j);
+                        if (child.getValue(row, col) == 0 && !child.valueExist(j))
+                            child.setValue(row, col, j);
+
                         col++;
                     }
+
+                    row++;
                 }
 
-                row++;
-            }
+                // Fill rest of empty values
+                row = 0;
+                for (auto &childRow: child.getValues()) {
+                    int col = 0;
 
-            // Copy Columns from first parent
-            for (int col = 0; col < size; col++) {
-                int sum = 0;
+                    for (auto &childColum: childRow) {
+                        if (childColum == 0) {
+                            int tmpValue;
 
-                for (auto &value: parent1.getValues()) sum += value[col];
+                            do {
+                                if (!child.valueExist(tmpValue)) child.setValue(row, col, tmpValue);
 
-                if (sum == parent1.getSum()) {
-                    row = 0;
+                                tmpValue = distFill(local_rng);
+                            } while (child.getValue(row, col) == 0);
+                        }
 
-                    for (auto &value: parent1.getValues()) {
-                        child.setValue(row, col, value[col]);
-                        row++;
-                    }
-                }
-            }
-
-            // Add some values from second parent
-            row = 0;
-            for (auto &value: parent2.getValues()) {
-                int col = 0;
-
-                for (int j: value) {
-                    if (child.getValue(row, col) == 0 && !child.valueExist(j))
-                        child.setValue(row, col, j);
-
-                    col++;
-                }
-
-                row++;
-            }
-
-            // Fill rest of empty values
-            row = 0;
-            for (auto &childRow: child.getValues()) {
-                int col = 0;
-
-                for (auto &childColumn: childRow) {
-                    if (childColumn == 0) {
-                        int tmpValue;
-
-                        do {
-                            tmpValue = distFill(rng);
-                        } while (child.valueExist(tmpValue) || tmpValue > size * size); // Check to ensure values are within range
-
-                        child.setValue(row, col, tmpValue);
+                        col++;
                     }
 
-                    col++;
+                    row++;
                 }
+            } while (std::find(local_offspring.begin(), local_offspring.end(), child) != local_offspring.end());
 
-                row++;
-            }
-        } while (std::find(offspring.begin(), offspring.end(), child) != offspring.end());
+            child.evaluate();
+            local_offspring.push_back(child);
+        }
 
-        child.evaluate();
-        offspring.push_back(child);
+        // Merge local vectors into the global vector
+#pragma omp critical
+        offspring.insert(offspring.end(), local_offspring.begin(), local_offspring.end());
     }
+
+    // Evaluate fitness of offspring after all children have been created
+#pragma omp parallel for schedule(static) default(none) shared(offspring)
+    for (auto &child: offspring)
+#pragma omp critical
+        child.evaluate();
 }
 
 /**
@@ -420,12 +444,18 @@ void crossover(std::vector<MagicSquare> &population, std::vector<MagicSquare> &o
  * @param probability
  */
 void mutate(std::vector<MagicSquare> &population, double probability) {
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
+#pragma omp parallel default(none) shared(population, probability)
+    {
+        thread_local std::mt19937 local_rng(std::random_device{}()); // Local RNG for each thread
+        std::uniform_real_distribution<double> dist(0.0, 1.0);
 
-    // Mutate each square with a certain probability
-    for (auto &square: population)
-        if (dist(rng) < probability)
-            square.swap();
+        // Mutate each square with a certain probability
+#pragma omp for schedule(static)
+        for (auto &square: population)
+            if (dist(local_rng) < probability)
+#pragma omp critical
+                square.swap();
+    }
 }
 
 /**
@@ -451,8 +481,8 @@ MagicSquare solve(std::vector<MagicSquare> &population, int size, int iterations
         auto check = std::vector<MagicSquare>();
         selection(population, selected);
 
-        if (selected[0].getFitness() == 0)
-            return selected[0];
+        if (selected.front().getFitness() == 0)
+            return selected.front();
 
         if (verbose) {
             int count = 0;
@@ -469,33 +499,38 @@ MagicSquare solve(std::vector<MagicSquare> &population, int size, int iterations
         crossover(population, offspring, size);
         sort(offspring);
 
-        if (offspring[0].getFitness() == 0)
-            return offspring[0];
+        if (offspring.front().getFitness() == 0)
+            return offspring.front();
 
-        if (population[0].getFitness() == lastFitness) {
+        if (population.front().getFitness() == lastFitness) {
             unchanged++;
 
-            if (probability < 1) probability += 0.1;
+            if (probability < 1 && unchanged >= BASE_CHANGE_COUNT) probability += 0.1;
         } else {
-            if (unchanged > 0) unchanged--;
-
-            if (probability >= 1) probability = BASE_MUTATION;
-
-            if (probability > BASE_MUTATION) probability -= 0.1;
+            unchanged = 0;
+            probability = BASE_MUTATION;
         }
 
         mutate(offspring, probability);
 
         int i = 0;
+#pragma omp parallel for schedule(static) default(none) shared(population, selected, offspring, check, i)
         for (auto &oneSquare: selected) {
-            population[i] = oneSquare;
-            i++;
-        }
-
-        for (auto &oneSquare: offspring) {
-            if (std::find(selected.begin(), selected.end(), oneSquare) == selected.end()) {
+#pragma omp critical
+            {
                 population[i] = oneSquare;
                 i++;
+            }
+        }
+
+#pragma omp parallel for schedule(static) default(none) shared(population, selected, offspring, check, i)
+        for (auto &oneSquare: offspring) {
+            if (std::find(selected.begin(), selected.end(), oneSquare) == selected.end()) {
+#pragma omp critical
+                {
+                    population[i] = oneSquare;
+                    i++;
+                }
             }
         }
 
@@ -513,5 +548,5 @@ MagicSquare solve(std::vector<MagicSquare> &population, int size, int iterations
     }
 
     sort(population);
-    return population[0];
+    return population.front();
 }

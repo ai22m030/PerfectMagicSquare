@@ -30,6 +30,31 @@ add_executable(${MAGIC_SQUARE_PROJECT_NAME}TestsNine
         ${MAGIC_SQUARE_TESTS_DIR}/square_nine_test.cpp
         ${MAGIC_SQUARE_SRC_DIR}/magic_square.cpp)
 
+find_package(OpenMP REQUIRED)
+
+if (OpenMP_CXX_FOUND)
+    target_include_directories(${MAGIC_SQUARE_PROJECT_NAME}TestsThree PUBLIC OpenMP::OpenMP_CXX_INCLUDE_DIRS)
+    target_link_libraries(${MAGIC_SQUARE_PROJECT_NAME}TestsThree PUBLIC OpenMP::OpenMP_CXX)
+
+    target_include_directories(${MAGIC_SQUARE_PROJECT_NAME}TestsFour PUBLIC OpenMP::OpenMP_CXX_INCLUDE_DIRS)
+    target_link_libraries(${MAGIC_SQUARE_PROJECT_NAME}TestsFour PUBLIC OpenMP::OpenMP_CXX)
+
+    target_include_directories(${MAGIC_SQUARE_PROJECT_NAME}TestsFive PUBLIC OpenMP::OpenMP_CXX_INCLUDE_DIRS)
+    target_link_libraries(${MAGIC_SQUARE_PROJECT_NAME}TestsFive PUBLIC OpenMP::OpenMP_CXX)
+
+    target_include_directories(${MAGIC_SQUARE_PROJECT_NAME}TestsSix PUBLIC OpenMP::OpenMP_CXX_INCLUDE_DIRS)
+    target_link_libraries(${MAGIC_SQUARE_PROJECT_NAME}TestsSix PUBLIC OpenMP::OpenMP_CXX)
+
+    target_include_directories(${MAGIC_SQUARE_PROJECT_NAME}TestsSeven PUBLIC OpenMP::OpenMP_CXX_INCLUDE_DIRS)
+    target_link_libraries(${MAGIC_SQUARE_PROJECT_NAME}TestsSeven PUBLIC OpenMP::OpenMP_CXX)
+
+    target_include_directories(${MAGIC_SQUARE_PROJECT_NAME}TestsEight PUBLIC OpenMP::OpenMP_CXX_INCLUDE_DIRS)
+    target_link_libraries(${MAGIC_SQUARE_PROJECT_NAME}TestsEight PUBLIC OpenMP::OpenMP_CXX)
+
+    target_include_directories(${MAGIC_SQUARE_PROJECT_NAME}TestsNine PUBLIC OpenMP::OpenMP_CXX_INCLUDE_DIRS)
+    target_link_libraries(${MAGIC_SQUARE_PROJECT_NAME}TestsNine PUBLIC OpenMP::OpenMP_CXX)
+endif ()
+
 target_include_directories(${MAGIC_SQUARE_PROJECT_NAME}TestsThree PUBLIC
         ${MAGIC_SQUARE_INC_DIR})
 
