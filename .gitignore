@@ -4,6 +4,7 @@
 .idea
 /bin
 /CMakeFiles
+/src/CMakeFiles
 /src/cmake_install.cmake
 /src/CTestTestfile.cmake
 /src/Makefile
