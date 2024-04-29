@@ -2,3 +2,16 @@
 /cmake-build-debug/
 /cmake-build-debug-wsl/
 .idea
+/bin
+/CMakeFiles
+/src/cmake_install.cmake
+/src/CTestTestfile.cmake
+/src/Makefile
+/tests/CMakeFiles
+/tests/CTestTestfile.cmake
+/tests/Makefile
+/tests/cmake_install.cmake
+cmake_install.cmake
+CMakeCache.txt
+CTestTestfile.cmake
+Makefile
