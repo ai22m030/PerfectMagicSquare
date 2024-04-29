@@ -8,6 +8,7 @@
 #include <string_view>
 #include <vector>
 
+// Helper functions for program options parsing
 namespace program_options {
     bool has(const std::vector<std::string_view> &args, const std::string_view &option_name);
 

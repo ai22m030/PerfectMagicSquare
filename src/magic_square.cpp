@@ -11,6 +11,9 @@
 #include <omp.h>
 
 #include "magic_square.h"
+#include "tabulate.hpp"
+
+using namespace tabulate;
 
 /**
  * Create a new magic square with given size.
@@ -18,14 +21,11 @@
  * @param size
  * @param randomize
  */
-MagicSquare::MagicSquare(int size, bool randomize) {
-    this->fitness = 0;
-    this->dimension = size;
+MagicSquare::MagicSquare(int size, bool randomize) : dimension(size), fitness(0) {
     this->values.resize(size, std::vector<int>(size));
     this->sum = MAGIC_SUM(size);
 
-    if (randomize)
-        this->randomize();
+    if (randomize) this->randomize();
 
     this->evaluate();
 }
@@ -34,9 +34,7 @@ MagicSquare::MagicSquare(int size, bool randomize) {
  * Init square with 0 values.
  */
 void MagicSquare::init() {
-    for (auto &row: this->values)
-        for (auto &col: row)
-            col = 0;
+    std::fill(this->values.begin(), this->values.end(), std::vector<int>(this->dimension, 0));
 
     this->fitness = 0;
     this->evaluate();
@@ -47,18 +45,14 @@ void MagicSquare::init() {
  * Generate random numbers for magic square.
  */
 void MagicSquare::randomize() {
-    thread_local std::mt19937 local_rng(std::random_device{}()); // Local RNG for each thread
-    std::vector<int> tmpValues(this->dimension * this->dimension);
-    std::iota(tmpValues.begin(), tmpValues.end(), 1);
-    std::shuffle(tmpValues.begin(), tmpValues.end(), local_rng);
-
-    int i = 0;
-    for (auto &row: this->values) {
-        for (auto &col: row) {
-            col = tmpValues[i % (this->dimension * this->dimension)]; // Ensure the values are within range
-            i++;
-        }
-    }
+    thread_local std::mt19937 local_rng(std::random_device{}());
+    std::vector<int> numbers(this->dimension * this->dimension);
+    std::iota(numbers.begin(), numbers.end(), 1);
+    std::shuffle(numbers.begin(), numbers.end(), local_rng);
+    for (int i = 0; i < this->dimension; ++i)
+        for (int j = 0; j < this->dimension; ++j)
+            this->values[i][j] = numbers[i * this->dimension + j];
+    evaluate();
 }
 
 /**
@@ -82,15 +76,18 @@ void MagicSquare::evaluate() {
  *
  */
 void MagicSquare::swap() {
-    thread_local std::mt19937 local_rng(std::random_device{}());
+    thread_local std::mt19937 local_rng_from_row(std::random_device{}());
+    thread_local std::mt19937 local_rng_to_row(std::random_device{}());
+    thread_local std::mt19937 local_rng_from_col(std::random_device{}());
+    thread_local std::mt19937 local_rng_to_col(std::random_device{}());
     std::uniform_int_distribution<int> dist(0, this->dimension - 1);
 
     int fromRow, toRow, fromCol, toCol;
     do {
-        fromRow = dist(local_rng);
-        toRow = dist(local_rng);
-        fromCol = dist(local_rng);
-        toCol = dist(local_rng);
+        fromRow = dist(local_rng_from_row);
+        toRow = dist(local_rng_to_row);
+        fromCol = dist(local_rng_from_col);
+        toCol = dist(local_rng_to_col);
     } while ((fromRow == toRow) && (fromCol == toCol));
 
     std::swap(this->values[fromRow][fromCol], this->values[toRow][toCol]);
@@ -99,34 +96,32 @@ void MagicSquare::swap() {
 
 
 /**
- * Print square to commandline
+ * Print square to commandline using tabulate library
  *
  * @param details
  */
 void MagicSquare::print(bool details) {
-    int width = 2; // minimum width for single-digit numbers
+    Table magic_square_table;
 
-    for (const auto &row: this->values) {
-        for (const auto &num: row) {
-            int numWidth = (int) std::to_string(num).length();
-            if (numWidth > width)
-                width = numWidth;
+    // Set table style
+    magic_square_table.format()
+            .font_align(FontAlign::center)
+            .font_style({FontStyle::bold})
+            .column_separator("");  // Setting column separator to a space instead of double pipes
+
+    using Cell = std::variant<std::string, const char*, std::string_view, tabulate::Table>;
+    for (const auto &row : this->values) {
+        std::vector<Cell> table_row;
+        for (const auto &num : row) {
+            table_row.emplace_back(std::to_string(num)); // Convert number to string and add to row
         }
+        magic_square_table.add_row(table_row); // Add the row to the table
     }
 
-    // add 1 for left border
-    width += 1;
+    // Print the table
+    std::cout << magic_square_table << std::endl;
 
-    // print the matrix with borders between numbers
-    for (const auto &row: this->values) {
-        for (const auto &num: row)
-            std::cout << "|" << std::setw(width - 1) << num;
-
-        std::cout << "|" << std::endl;
-    }
-
-    if (details)
-        std::cout << "Fitness: " << this->getFitness() << std::endl << std::endl;
+    if (details) std::cout << "Fitness: " << this->getFitness() << std::endl << std::endl;
 }
 
 /**

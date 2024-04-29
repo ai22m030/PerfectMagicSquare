@@ -5,8 +5,10 @@
 #ifndef PERFECT_MAGIC_SQUARE_MAGIC_SQUARE_H
 #define PERFECT_MAGIC_SQUARE_MAGIC_SQUARE_H
 
-#include <vector>
 #include <string>
+#include <string_view>
+#include <variant>
+#include <vector>
 
 // Calculate the magic sum of a square of given size
 #define MAGIC_SUM(square_size) ((square_size * (square_size * square_size + 1)) / 2)
@@ -17,7 +19,7 @@ const double BASE_CHANGE_COUNT = 3;
 
 /**
  * Base structure of a single magic square.
- * The size is defined by const.
+ * The size is is passed to constructor.
  *
  */
 class MagicSquare {
