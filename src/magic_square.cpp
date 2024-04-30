@@ -7,11 +7,13 @@
 #include <iomanip>
 #include <fstream>
 #include <string>
-
 #include <omp.h>
 
 #include "tabulate.hpp"
 #include "magic_square.h"
+
+// Define the random number generator
+static std::mt19937 rng(std::random_device{}());
 
 /**
  * Create a new magic square with given size.
@@ -40,16 +42,16 @@ void MagicSquare::init() {
  * Generate random numbers for magic square.
  */
 void MagicSquare::randomize() {
-    thread_local std::mt19937 local_rng(std::random_device{}());
     std::vector<int> numbers(this->dimension * this->dimension);
-    std::iota(numbers.begin(), numbers.end(), 1);
-    std::shuffle(numbers.begin(), numbers.end(), local_rng);
+    std::iota(numbers.begin(), numbers.end(), 1); // Fill numbers from 1 to n*n
+    std::shuffle(numbers.begin(), numbers.end(), rng); // Shuffle numbers
 
+    // Fill the square with shuffled numbers
     for (int i = 0; i < this->dimension; ++i)
         for (int j = 0; j < this->dimension; ++j)
             this->values[i][j] = numbers[i * this->dimension + j];
 
-    evaluate();
+    evaluate(); // Evaluate the new configuration
 }
 
 /**
@@ -65,21 +67,24 @@ void MagicSquare::evaluate() {
     this->fitness += this->fitnessDiagonal2();
 }
 
-
 /**
  * Change position of two random numbers.
  *
  */
 void MagicSquare::swap() {
-    thread_local std::mt19937 local_rng(std::random_device{}());
-    std::uniform_int_distribution<int> dist(0, this->dimension - 1);
+    // Separate generators for rows and columns
+    thread_local std::mt19937 row_rng(std::random_device{}());
+    thread_local std::mt19937 col_rng(std::random_device{}());
+
+    std::uniform_int_distribution<int> row_dist(0, this->dimension - 1);
+    std::uniform_int_distribution<int> col_dist(0, this->dimension - 1);
 
     int fromRow, toRow, fromCol, toCol;
     do {
-        fromRow = dist(local_rng);
-        toRow = dist(local_rng);
-        fromCol = dist(local_rng);
-        toCol = dist(local_rng);
+        fromRow = row_dist(row_rng);
+        toRow = row_dist(row_rng);
+        fromCol = col_dist(col_rng);
+        toCol = col_dist(col_rng);
     } while ((fromRow == toRow) && (fromCol == toCol));
 
     std::swap(this->values[fromRow][fromCol], this->values[toRow][toCol]);
@@ -366,113 +371,95 @@ void crossover(std::vector<MagicSquare> &population, std::vector<MagicSquare> &o
     std::uniform_int_distribution<int> distFill(1, size * size);
     std::uniform_int_distribution<int> distParent(0, (int) population.size() - 1);
 
-    // Creating a parallel region
-#pragma omp parallel default(none) shared(population, offspring, size, distParent, distFill)
-    {
-        std::vector<MagicSquare> local_offspring;
-        std::mt19937 local_rng(std::random_device{}());
+    for (int i = 0; i < (population.size() / 3); i++) {
+        MagicSquare parent1(size, false);
+        MagicSquare parent2(size, false);
+        MagicSquare child(size, false);
 
-#pragma omp for schedule(static)
-        for (int i = 0; i < (population.size() / 3); i++) {
-            MagicSquare parent1(size, false);
-            MagicSquare parent2(size, false);
-            MagicSquare child(size, false);
+        do {
+            child.init();
 
             do {
-                child.init();
+                parent1 = population[distParent(rng)];
+                parent2 = population[distParent(rng)];
+            } while (parent1 == parent2);
 
-                do {
-                    parent1 = population[distParent(local_rng)];
-                    parent2 = population[distParent(local_rng)];
-                } while (parent1 == parent2);
+            // Copy rows from first parent
+            int row = 0;
+            for (auto &value: parent1.getValues()) {
+                int sum = 0;
 
-                // Copy rows from first parent
-                int row = 0;
-                for (auto &value: parent1.getValues()) {
-                    int sum = 0;
+                for (int j: value) sum += j;
 
-                    for (int j: value) sum += j;
-
-                    if (sum == parent1.getSum()) {
-                        int col = 0;
-
-                        for (int j: value) {
-                            child.setValue(row, col, j);
-                            col++;
-                        }
-                    }
-
-                    row++;
-                }
-
-                // Copy Columns from first parent
-                for (int col = 0; col < size; col++) {
-                    int sum = 0;
-
-                    for (auto &value: parent1.getValues()) sum += value[col];
-
-                    if (sum == parent1.getSum()) {
-                        row = 0;
-
-                        for (auto &value: parent1.getValues()) {
-                            child.setValue(row, col, value[col]);
-                            row++;
-                        }
-                    }
-                }
-
-                // Add some values from second parent
-                row = 0;
-                for (auto &value: parent2.getValues()) {
+                if (sum == parent1.getSum()) {
                     int col = 0;
 
                     for (int j: value) {
-                        if (child.getValue(row, col) == 0 && !child.valueExist(j))
-                            child.setValue(row, col, j);
-
+                        child.setValue(row, col, j);
                         col++;
                     }
-
-                    row++;
                 }
 
-                // Fill rest of empty values
-                row = 0;
-                for (auto &childRow: child.getValues()) {
-                    int col = 0;
+                row++;
+            }
 
-                    for (auto &childColum: childRow) {
-                        if (childColum == 0) {
-                            int tmpValue;
+            // Copy Columns from first parent
+            for (int col = 0; col < size; col++) {
+                int sum = 0;
 
-                            do {
-                                if (!child.valueExist(tmpValue)) child.setValue(row, col, tmpValue);
+                for (auto &value: parent1.getValues()) sum += value[col];
 
-                                tmpValue = distFill(local_rng);
-                            } while (child.getValue(row, col) == 0);
-                        }
+                if (sum == parent1.getSum()) {
+                    row = 0;
 
-                        col++;
+                    for (auto &value: parent1.getValues()) {
+                        child.setValue(row, col, value[col]);
+                        row++;
+                    }
+                }
+            }
+
+            // Add some values from second parent
+            row = 0;
+            for (auto &value: parent2.getValues()) {
+                int col = 0;
+
+                for (int j: value) {
+                    if (child.getValue(row, col) == 0 && !child.valueExist(j))
+                        child.setValue(row, col, j);
+
+                    col++;
+                }
+
+                row++;
+            }
+
+            // Fill rest of empty values
+            row = 0;
+            for (auto &childRow: child.getValues()) {
+                int col = 0;
+
+                for (auto &childColum: childRow) {
+                    if (childColum == 0) {
+                        int tmpValue = distFill(rng);
+
+                        do {
+                            if (!child.valueExist(tmpValue)) child.setValue(row, col, tmpValue);
+
+                            tmpValue = distFill(rng);
+                        } while (child.getValue(row, col) == 0);
                     }
 
-                    row++;
+                    col++;
                 }
-            } while (std::find(local_offspring.begin(), local_offspring.end(), child) != local_offspring.end());
 
-            child.evaluate();
-            local_offspring.push_back(child);
-        }
+                row++;
+            }
+        } while (std::find(offspring.begin(), offspring.end(), child) != offspring.end());
 
-        // Merge local vectors into the global vector
-#pragma omp critical
-        offspring.insert(offspring.end(), local_offspring.begin(), local_offspring.end());
-    }
-
-    // Evaluate fitness of offspring after all children have been created
-#pragma omp parallel for schedule(static) default(none) shared(offspring)
-    for (auto &child: offspring)
-#pragma omp critical
         child.evaluate();
+        offspring.push_back(child);
+    }
 }
 
 /**
