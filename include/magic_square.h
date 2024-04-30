@@ -6,8 +6,6 @@
 #define PERFECT_MAGIC_SQUARE_MAGIC_SQUARE_H
 
 #include <string>
-#include <string_view>
-#include <variant>
 #include <vector>
 
 // Calculate the magic sum of a square of given size

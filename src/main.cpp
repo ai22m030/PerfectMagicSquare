@@ -2,10 +2,11 @@
 // Created by Adnan Vatric on 17.02.23.
 //
 
+#include "magic_square.h"
+
 #include <iostream>
 #include <vector>
 
-#include "magic_square.h"
 #include "program_options.h"
 
 /**
@@ -31,7 +32,6 @@ int main(int argc, char **argv) {
 
     if (help) {
         program_options::description();
-
         return EXIT_SUCCESS;
     }
 
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     if (program_options::has(args, "-o"))
         name = program_options::get(args, "-o").begin();
 
-    if(silent && verbose) {
+    if (silent && verbose) {
         std::cout << "Can't combine verbose and silent mode!" << std::endl << std::endl;
         fail = true;
     }
@@ -69,7 +69,6 @@ int main(int argc, char **argv) {
 
     if (fail) {
         program_options::description();
-
         return EXIT_FAILURE;
     }
 
@@ -80,7 +79,7 @@ int main(int argc, char **argv) {
     auto square = solve(population, size, iterations, verbose);
 
     if (square.getFitness() == 0) {
-        if(!silent) {
+        if (!silent) {
             std::cout << "Found solution:" << std::endl;
             square.print(false);
         }
@@ -91,7 +90,7 @@ int main(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
-    if(!silent)
+    if (!silent)
         std::cout << "No solution found!" << std::endl;
 
     return EXIT_SUCCESS;
