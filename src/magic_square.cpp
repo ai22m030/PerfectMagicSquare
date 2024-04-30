@@ -36,7 +36,6 @@ void MagicSquare::init() {
     this->evaluate();
 }
 
-
 /**
  * Generate random numbers for magic square.
  */
@@ -87,7 +86,6 @@ void MagicSquare::swap() {
     this->evaluate();
 }
 
-
 /**
  * Print square to commandline using tabulate library
  *
@@ -96,20 +94,61 @@ void MagicSquare::swap() {
 void MagicSquare::print(bool details) {
     tabulate::Table square_table;
 
-    // Set table format for better readability
+    // Initial table formatting for better readability
     square_table.format()
             .font_style({tabulate::FontStyle::bold})
+            .font_align(tabulate::FontAlign::center)
             .column_separator("");
 
-    for (const auto &row : this->values) {
+    // Adding rows
+    for (auto & value : this->values) {
         tabulate::Table::Row_t table_row;
-        for (const auto &num : row) table_row.push_back(std::to_string(num));
+        for (int j : value) {
+            table_row.push_back(std::to_string(j));
+        }
         square_table.add_row(table_row);
     }
 
-    std::cout << square_table << std::endl;
+    if (details) {
+        // Apply initial color formatting after all rows have been added
+        for (size_t i = 0; i < this->values.size(); ++i) {
+            for (size_t j = 0; j < this->values[i].size(); ++j) {
+                square_table[i][j].format()
+                        .font_background_color(tabulate::Color::green)
+                        .font_color(tabulate::Color::grey);
+            }
+        }
 
-    if (details) std::cout << "Fitness: " << this->getFitness() << std::endl << std::endl;
+        // Check and color rows and columns based on their fitness
+        for (int i = 0; i < this->values.size(); ++i) {
+            int row_fitness = fitnessRows(i);
+            int col_fitness = fitnessColumns(i);
+
+            for (int j = 0; j < this->values[i].size(); ++j) {
+                if (row_fitness != 0 || col_fitness != 0) {
+                    square_table[i][j].format()
+                            .font_background_color(tabulate::Color::red);
+                }
+            }
+        }
+
+        // Coloring diagonals if their fitness is not zero
+        if (fitnessDiagonal1() != 0) {
+            for (int i = 0; i < this->values.size(); ++i)
+                square_table[i][i].format()
+                        .font_background_color(tabulate::Color::red);
+        }
+
+        if (fitnessDiagonal2() != 0) {
+            for (int i = 0; i < this->values.size(); ++i)
+                square_table[i][this->values.size() - 1 - i].format()
+                        .font_background_color(tabulate::Color::red);
+        }
+
+        std::cout << "Fitness: " << this->getFitness() << std::endl;
+    }
+
+    std::cout << square_table << std::endl << std::endl;
 }
 
 /**
@@ -186,7 +225,6 @@ int MagicSquare::fitnessColumns(int col_index) {
 
     return fit;
 }
-
 
 /**
  * Calculate fitness of diagonal (left top to right bottom)
@@ -485,14 +523,14 @@ MagicSquare solve(std::vector<MagicSquare> &population, int size, int iterations
             return selected.front();
 
         if (verbose) {
-            int count = 0;
+            int count = 5;
 
             std::cout << "Current top 5:" << std::endl << std::endl;
 
-            while (count < 5) {
-                std::cout << '#' << count + 1 << ':' << std::endl;
-                selected[count].print();
-                count++;
+            while (count > 0) {
+                std::cout << '#' << count << ':' << std::endl;
+                selected[count - 1].print();
+                count--;
             }
         }
 

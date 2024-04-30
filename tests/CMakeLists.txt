@@ -4,30 +4,37 @@
 
 add_executable(${MAGIC_SQUARE_PROJECT_NAME}TestsThree
         ${MAGIC_SQUARE_TESTS_DIR}/square_three_test.cpp
+        ${MAGIC_SQUARE_SRC_DIR}/program_options.cpp
         ${MAGIC_SQUARE_SRC_DIR}/magic_square.cpp)
 
 add_executable(${MAGIC_SQUARE_PROJECT_NAME}TestsFour
         ${MAGIC_SQUARE_TESTS_DIR}/square_four_test.cpp
+        ${MAGIC_SQUARE_SRC_DIR}/program_options.cpp
         ${MAGIC_SQUARE_SRC_DIR}/magic_square.cpp)
 
 add_executable(${MAGIC_SQUARE_PROJECT_NAME}TestsFive
         ${MAGIC_SQUARE_TESTS_DIR}/square_five_test.cpp
+        ${MAGIC_SQUARE_SRC_DIR}/program_options.cpp
         ${MAGIC_SQUARE_SRC_DIR}/magic_square.cpp)
 
 add_executable(${MAGIC_SQUARE_PROJECT_NAME}TestsSix
         ${MAGIC_SQUARE_TESTS_DIR}/square_six_test.cpp
+        ${MAGIC_SQUARE_SRC_DIR}/program_options.cpp
         ${MAGIC_SQUARE_SRC_DIR}/magic_square.cpp)
 
 add_executable(${MAGIC_SQUARE_PROJECT_NAME}TestsSeven
         ${MAGIC_SQUARE_TESTS_DIR}/square_seven_test.cpp
+        ${MAGIC_SQUARE_SRC_DIR}/program_options.cpp
         ${MAGIC_SQUARE_SRC_DIR}/magic_square.cpp)
 
 add_executable(${MAGIC_SQUARE_PROJECT_NAME}TestsEight
         ${MAGIC_SQUARE_TESTS_DIR}/square_eight_test.cpp
+        ${MAGIC_SQUARE_SRC_DIR}/program_options.cpp
         ${MAGIC_SQUARE_SRC_DIR}/magic_square.cpp)
 
 add_executable(${MAGIC_SQUARE_PROJECT_NAME}TestsNine
         ${MAGIC_SQUARE_TESTS_DIR}/square_nine_test.cpp
+        ${MAGIC_SQUARE_SRC_DIR}/program_options.cpp
         ${MAGIC_SQUARE_SRC_DIR}/magic_square.cpp)
 
 find_package(OpenMP REQUIRED)
