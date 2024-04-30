@@ -38,6 +38,14 @@ public:
 
     void write(std::string &);
 
+    int fitnessRows(int row_index = -1);
+
+    int fitnessColumns(int col_index = -1);
+
+    int fitnessDiagonal1();
+
+    int fitnessDiagonal2();
+
     [[nodiscard]] auto getFitness() const { return this->fitness; }
 
     [[nodiscard]] auto getSum() const { return this->sum; }
@@ -61,14 +69,6 @@ private:
     int dimension;
     int fitness;
     int sum;
-
-    int fitnessRows();
-
-    int fitnessColumns();
-
-    int fitnessDiagonal1();
-
-    int fitnessDiagonal2();
 };
 
 bool operator==(const MagicSquare &, const MagicSquare &);

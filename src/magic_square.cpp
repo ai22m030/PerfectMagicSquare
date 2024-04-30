@@ -10,10 +10,8 @@
 
 #include <omp.h>
 
-#include "magic_square.h"
 #include "tabulate.hpp"
-
-using namespace tabulate;
+#include "magic_square.h"
 
 /**
  * Create a new magic square with given size.
@@ -35,8 +33,6 @@ MagicSquare::MagicSquare(int size, bool randomize) : dimension(size), fitness(0)
  */
 void MagicSquare::init() {
     std::fill(this->values.begin(), this->values.end(), std::vector<int>(this->dimension, 0));
-
-    this->fitness = 0;
     this->evaluate();
 }
 
@@ -49,17 +45,17 @@ void MagicSquare::randomize() {
     std::vector<int> numbers(this->dimension * this->dimension);
     std::iota(numbers.begin(), numbers.end(), 1);
     std::shuffle(numbers.begin(), numbers.end(), local_rng);
+
     for (int i = 0; i < this->dimension; ++i)
         for (int j = 0; j < this->dimension; ++j)
             this->values[i][j] = numbers[i * this->dimension + j];
+
     evaluate();
 }
 
 /**
  * Evaluate the fitness of a square solution.
  *
- * @param square
- * @param magicSum
  */
 void MagicSquare::evaluate() {
     this->fitness = 0;
@@ -76,18 +72,15 @@ void MagicSquare::evaluate() {
  *
  */
 void MagicSquare::swap() {
-    thread_local std::mt19937 local_rng_from_row(std::random_device{}());
-    thread_local std::mt19937 local_rng_to_row(std::random_device{}());
-    thread_local std::mt19937 local_rng_from_col(std::random_device{}());
-    thread_local std::mt19937 local_rng_to_col(std::random_device{}());
+    thread_local std::mt19937 local_rng(std::random_device{}());
     std::uniform_int_distribution<int> dist(0, this->dimension - 1);
 
     int fromRow, toRow, fromCol, toCol;
     do {
-        fromRow = dist(local_rng_from_row);
-        toRow = dist(local_rng_to_row);
-        fromCol = dist(local_rng_from_col);
-        toCol = dist(local_rng_to_col);
+        fromRow = dist(local_rng);
+        toRow = dist(local_rng);
+        fromCol = dist(local_rng);
+        toCol = dist(local_rng);
     } while ((fromRow == toRow) && (fromCol == toCol));
 
     std::swap(this->values[fromRow][fromCol], this->values[toRow][toCol]);
@@ -101,25 +94,20 @@ void MagicSquare::swap() {
  * @param details
  */
 void MagicSquare::print(bool details) {
-    Table magic_square_table;
+    tabulate::Table square_table;
 
-    // Set table style
-    magic_square_table.format()
-            .font_align(FontAlign::center)
-            .font_style({FontStyle::bold})
-            .column_separator("");  // Setting column separator to a space instead of double pipes
+    // Set table format for better readability
+    square_table.format()
+            .font_style({tabulate::FontStyle::bold})
+            .column_separator("");
 
-    using Cell = std::variant<std::string, const char*, std::string_view, tabulate::Table>;
     for (const auto &row : this->values) {
-        std::vector<Cell> table_row;
-        for (const auto &num : row) {
-            table_row.emplace_back(std::to_string(num)); // Convert number to string and add to row
-        }
-        magic_square_table.add_row(table_row); // Add the row to the table
+        tabulate::Table::Row_t table_row;
+        for (const auto &num : row) table_row.push_back(std::to_string(num));
+        square_table.add_row(table_row);
     }
 
-    // Print the table
-    std::cout << magic_square_table << std::endl;
+    std::cout << square_table << std::endl;
 
     if (details) std::cout << "Fitness: " << this->getFitness() << std::endl << std::endl;
 }
@@ -147,14 +135,24 @@ void MagicSquare::write(std::string &name) {
  *
  * @return
  */
-int MagicSquare::fitnessRows() {
+int MagicSquare::fitnessRows(int row_index) {
     int fit = 0;
+    int count = 0;
+    bool one_row = false;
 
     for (auto &rows: this->values) {
         int i = 0;
 
+        if(row_index != -1 && count != row_index) {
+            count++;
+            one_row = true;
+            continue;
+        }
+
         for (auto cols: rows)
             i += cols;
+
+        if(one_row) return std::abs(i - this->sum);
 
         fit += std::abs(i - this->sum);
     }
@@ -167,11 +165,18 @@ int MagicSquare::fitnessRows() {
  *
  * @return
  */
-int MagicSquare::fitnessColumns() {
+int MagicSquare::fitnessColumns(int col_index) {
     int fit = 0;
 
     for (int cols = 0; cols < this->dimension; cols++) {
         int i = 0;
+
+        if(col_index != -1) {
+            for (auto &value: this->values)
+                i += value[col_index];
+
+            return std::abs(i - this->sum);
+        }
 
         for (auto &value: this->values)
             i += value[cols];

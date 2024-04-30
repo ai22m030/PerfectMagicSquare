@@ -8356,7 +8356,6 @@ Printer::compute_cell_dimensions(TableInternal &table) {
     // which means that .width() has higher precedence than .height()
     // when both are configured by the user
     //
-    // TODO: Maybe this can be configured?
     // If such a configuration is exposed, i.e., prefer height over width
     // then the logic will be reversed, i.e.,
     // column_widths.push_back(std::max(configured_width, computed_width))
