@@ -9,8 +9,9 @@
 #include <iomanip>
 #include <fstream>
 
+#include <omp.h>
+
 #include "tabulate.hpp"
-#include "generator.h"
 
 /**
  * Create a new magic square with given size.
@@ -39,6 +40,7 @@ void MagicSquare::init() {
  * Generate random numbers for magic square.
  */
 void MagicSquare::randomize() {
+    thread_local std::mt19937 rng(std::random_device{}());
     std::vector<int> numbers(this->dimension * this->dimension);
     std::iota(numbers.begin(), numbers.end(), 1); // Fill numbers from 1 to n*n
     std::shuffle(numbers.begin(), numbers.end(), rng); // Shuffle numbers
@@ -70,13 +72,14 @@ void MagicSquare::evaluate() {
  */
 void MagicSquare::swap() {
     int fromRow, toRow, fromCol, toCol;
-    std::uniform_int_distribution<int> local_dist(0, this->dimension - 1);
+    thread_local std::mt19937 rng(std::random_device{}());
+    thread_local std::uniform_int_distribution<int> dist(0, this->dimension - 1);
 
     do {
-        fromRow = local_dist(rng);
-        toRow = local_dist(rng);
-        fromCol = local_dist(rng);
-        toCol = local_dist(rng);
+        fromRow = dist(rng);
+        toRow = dist(rng);
+        fromCol = dist(rng);
+        toCol = dist(rng);
     } while ((fromRow == toRow) && (fromCol == toCol));
 
     std::swap(this->values[fromRow][fromCol], this->values[toRow][toCol]);
@@ -124,16 +127,16 @@ void MagicSquare::print(bool details) {
         }
 
         // Coloring diagonals if their fitness is not zero
-        if (fitnessDiagonal1() != 0) {
+        if (fitnessDiagonal1() == 0) {
             for (int i = 0; i < this->values.size(); ++i)
                 square_table[i][i].format()
-                        .font_background_color(tabulate::Color::red);
+                        .font_background_color(tabulate::Color::green);
         }
 
-        if (fitnessDiagonal2() != 0) {
+        if (fitnessDiagonal2() == 0) {
             for (int i = 0; i < this->values.size(); ++i)
                 square_table[i][this->values.size() - 1 - i].format()
-                        .font_background_color(tabulate::Color::red);
+                        .font_background_color(tabulate::Color::green);
         }
 
         std::cout << "Fitness: " << this->getFitness() << std::endl;
@@ -167,14 +170,14 @@ void MagicSquare::write(std::string &name) {
  */
 int MagicSquare::fitnessRows(int row_index) {
     int fit = 0;
-    int count = 0;
+    int row = 0;
     bool one_row = false;
 
     for (auto &rows: this->values) {
         int i = 0;
 
-        if (row_index != -1 && count != row_index) {
-            count++;
+        if (row_index != -1 && row != row_index) {
+            row++;
             one_row = true;
             continue;
         }
@@ -347,52 +350,63 @@ void selection(std::vector<MagicSquare> &population, std::vector<MagicSquare> &s
  * @return
  */
 void crossover(std::vector<MagicSquare> &population, std::vector<MagicSquare> &offspring, int size) {
-    std::uniform_int_distribution<int> distParent(0, (int)population.size() - 1);
-    std::uniform_int_distribution<int> distFill(1, size * size);
+#pragma omp parallel default(none) shared(population, offspring, size)
+    {
+        thread_local std::mt19937 rng1(std::random_device{}());
+        thread_local std::mt19937 rng2(std::random_device{}());
+        thread_local std::mt19937 rng3(std::random_device{}());
+        thread_local std::uniform_int_distribution<int> distParent(0, population.size() - 1);
+        thread_local std::uniform_int_distribution<int> distFill(1, size * size);
+        std::vector<MagicSquare> localOffspring;  // Local storage for each thread's offspring
 
-    for (int i = 0; i < (population.size() / 3); i++) {
-        MagicSquare parent1 = population[distParent(rng)];
-        MagicSquare parent2 = population[distParent(rng)];
-        MagicSquare child(size, false);
+#pragma omp for nowait  // Distribute loop iterations across threads without waiting
+        for (int i = 0; i < population.size() / 3; i++) {
+            MagicSquare child(size, false);
 
-        child.init();
+            child.init();
 
-        // Select values based on fitness
-        for (int row = 0; row < size; ++row) {
-            for (int col = 0; col < size; ++col) {
-                int val1 = parent1.getValue(row, col);
-                int val2 = parent2.getValue(row, col);
+            MagicSquare parent1 = population[distParent(rng1)];
+            MagicSquare parent2 = population[distParent(rng2)];
 
-                // Choose based on some fitness condition, you could use your fitness functions here
-                if (parent1.fitnessRows(row) + parent1.fitnessColumns(col) < parent2.fitnessRows(row) + parent2.fitnessColumns(col)) {
-                    if (!child.valueExist(val1)) {
-                        child.setValue(row, col, val1);
-                    }
-                } else {
-                    if (!child.valueExist(val2)) {
-                        child.setValue(row, col, val2);
+            while (parent1 == parent2) parent2 = population[distParent(rng2)];
+
+            // Select values based on fitness
+            for (int row = 0; row < size; ++row) {
+                for (int col = 0; col < size; ++col) {
+                    int val1 = parent1.getValue(row, col);
+                    int val2 = parent2.getValue(row, col);
+                    int chosenValue = ((parent1.fitnessRows(row) + parent1.fitnessColumns(col)) <
+                            (parent2.fitnessRows(row) + parent2.fitnessColumns(col))) ? val1 : val2;
+                    if (!child.valueExist(chosenValue)) {
+                        child.setValue(row, col, chosenValue);
                     }
                 }
             }
-        }
 
-        //Fill the rest with of the values randomly
-        for (int row = 0; row < size; ++row) {
-            for (int col = 0; col < size; ++col) {
-                if (child.getValue(row, col) == 0) {
-                    int newValue;
-                    do {
-                        newValue = distFill(rng);
-                    } while (child.valueExist(newValue));
-                    child.setValue(row, col, newValue);
+            // Fill the rest with random values
+            for (int row = 0; row < size; ++row) {
+                for (int col = 0; col < size; ++col) {
+                    if (child.getValue(row, col) == 0) {
+                        int newValue;
+                        do {
+                            newValue = distFill(rng3);
+                        } while (child.valueExist(newValue));
+                        child.setValue(row, col, newValue);
+                    }
                 }
             }
+
+            child.evaluate();
+            localOffspring.push_back(child);
         }
 
-        child.evaluate();
-        offspring.push_back(child);
+#pragma omp critical  // Use critical section to safely merge results from each thread
+        {
+            offspring.insert(offspring.end(), localOffspring.begin(), localOffspring.end());
+        }
     }
 }
+
 
 /**
  * Change position of two numbers in a square by a given probability.
@@ -401,10 +415,16 @@ void crossover(std::vector<MagicSquare> &population, std::vector<MagicSquare> &o
  * @param probability
  */
 void mutate(std::vector<MagicSquare> &population, double probability) {
-    // Mutate each square with a certain probability
-    for (auto &square: population)
-        if (dist(rng) < probability)
-            square.swap();
+#pragma omp parallel default(none) shared(population, probability)
+    {
+        thread_local std::mt19937 rng(std::random_device{}());
+        thread_local std::uniform_real_distribution<double> dist(0.0, 1.0);
+        // Mutate each square with a certain probability
+#pragma omp for nowait
+        for (auto &square: population)
+            if (dist(rng) < probability)
+                square.swap();
+    }
 }
 
 /**
